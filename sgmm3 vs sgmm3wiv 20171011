@@ -19,8 +19,8 @@
 * for ex: test [eq1_]sk=[eq2_]h_sk   
 *
 
-capture program drop sgmm3
-program define sgmm3
+capture program drop sgmm3_wivTest
+program define sgmm3_wivTest
 version 6.0
 *set trace on
 
@@ -397,6 +397,7 @@ T = minYearEnd_Y - maxYearInit_Y + 1
 pT = T-pp
 
 
+
 /*   easymode == 1 for choosing standard size of matrix (fast run) */
 easymode = 1
 if(easymode == 1){
@@ -689,11 +690,11 @@ nn = rows(matvar)
 epsilon = 0.001
 perturb = J(nn,1,epsilon)
 perturb = diag(perturb)
-
+/*   	matvar = matvar + perturb   */
 if(easymode == 1){
-			matvar = matvar + perturb
+			matvar = matvar + perturbu 
 		}else{
-			matvar = matvar
+			matvar = matvar 
 		}
 
 
@@ -702,7 +703,6 @@ nnu = rows(matvaru)
 epsilonu = 0.001
 perturbu = J(nnu,1,epsilonu)
 perturbu = diag(perturbu)
-/*    matvaru = matvaru + perturbu    */
 /*   matvaru = matvaru + perturbu     */
 if(easymode == 1){
 			matvaru = matvaru + perturbu 
@@ -719,11 +719,19 @@ st_matrix("uu", matvaru)
 printf("passing b to b2slsMata... \n")
 st_matrix("b2slsMata", b)
 
+
+	/* 	Weak Instrument Testing...	*/
+	/* First get beta from X ~ Z	*/
+	/* b = (ZZ)^-1 Z'X	*/
+	
+	/* get sigma(b)  */
+	
+	/* then get F = (Rb -b) (R sigma R')^-1 (Rb - r) */
+	
 	/* Xvec[1..10,.]		*/
 	/* X[1..100,1..4] 		*/
 	/* newY[1..100,.] 		*/
 	/* Y[1..600,.] 			*/
-
 
 }
 
@@ -736,13 +744,6 @@ end
 ************************************************************************************
 ************************************************************************************
 ************************************************************************************
-
-
-
-
-
-
-
 
 capture program drop diag
 program define diag
