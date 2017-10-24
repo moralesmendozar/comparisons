@@ -19,8 +19,8 @@
 * for ex: test [eq1_]sk=[eq2_]h_sk   
 *
 
-capture program drop sgmm3_wivTest
-program define sgmm3_wivTest
+capture program drop sgmm3
+program define sgmm3
 version 6.0
 *set trace on
 
@@ -397,7 +397,6 @@ T = minYearEnd_Y - maxYearInit_Y + 1
 pT = T-pp
 
 
-
 /*   easymode == 1 for choosing standard size of matrix (fast run) */
 easymode = 1
 if(easymode == 1){
@@ -419,12 +418,9 @@ timesMatrix = ( vec_EmpTermPaises, TT, pTT)
 
 	/*Con minYearEnd y maxYearInit, creamos la matriz newY, a partir de Y.	*/
 newY = J(0,G,.)
-newYlag1 = J(0,G,.)
 for(i=1;i<=numPais;i++){
 	matTemp = Y[numtrim*(i-1) + mxYI[i] + pp ..numtrim*(i-1) + mnYE[i],.]
-	matTempl = Y[numtrim*(i-1) + mxYI[i] + pp - 1 ..numtrim*(i-1) + mnYE[i]-1,.]
 	newY = (newY \ matTemp)
-	newYlag1 = (newYlag1 \ matTempl)
 }
 newYfat = newY
 	/*   newYfat contains the newY in the old fashion written */
@@ -434,12 +430,9 @@ newYfat = newY
 /* First we build newYvec, that is Y in a vectorized fashion... */
 sumpT = 0
 newYvec = J(0,1,0)
-newYveclag1 = J(0,1,0)
 for(i=1;i<=numPais;i++){
 	betai = vec(newY[sumpT+1..sumpT + pTT[i],.])
-	betailag = vec(newYlag1[sumpT+1..sumpT + pTT[i],.])
 	newYvec = (newYvec \ betai)
-	newYveclag1 = (newYveclag1 \ betailag)
 	sumpT = sumpT + pTT[i]
 }
 
@@ -523,32 +516,26 @@ maxpTT = pTT[l[1],1]
 numforsZ = pTT - J(rows(TT),1,1)
 gauss = (maxpTT *(maxpTT - 1) ) / 2
 Z = J(0,G*(gauss + pp*(G-1)),0)
-numinstrmax = 2
-Zl = J(0,G*(numinstrmax + (G-1)),0)
-	/*  printf("numforsZ = ")  */
-	/*  numforsZ  */
 for(i=1;i<= numPais;i++){
-	printf("i = ")
 	i
 	Zi = J(G*pTT[i],G*( gauss + pp*(G-1) ), 0)
-	Zil = J(G*pTT[i],G*( numinstrmax + (G-1) ), 0)
 	for(g=1; g<= G; g++){
 		sumlenpast = 0
 		sumlen = 0
 		yk = J(1,0,0)
 		Zgg = J(pTT[i],gauss,0)
-		Zggl = J(pTT[i],numinstrmax,0)
 		for(k=2;k<= numforsZ[i]+1;k++){
 			ygik = A[numtrim*(i-1)+mxYI[i]+k-2,g]
-			if(k<=numinstrmax+1){
+			if(k<=4){
 				yk = (yk,ygik)
 			}else{
 				yk = (yk[2..cols(yk)],ygik)
 			}
+			printf("yk...")
+			yk
 			lenk = cols(yk)
 			sumlen = lenk + sumlenpast
 			Zgg[k,sumlenpast+1..sumlen] = yk
-			Zggl[k,1..lenk] = yk
 			sumlenpast = sumlen
 		}
 		cInd = 1..G
@@ -559,16 +546,10 @@ for(i=1;i<= numPais;i++){
 			Ygp2 = select(Ygp,vec)
 			Yg = (Yg,Ygp2)
 		}
-		Ygplag =A[numtrim*(i-1)+mxYI[i]+pp-1..numtrim*(i-1)+mnYE[i]-1,.]
-		Yglag = select(Ygplag,vec)
-		
 		Zg = (Zgg,Yg)
-		Zgl = (Zggl,Yglag)
 		Zi[pTT[i]*(g-1)+1..pTT[i]*g,( gauss + (G-1)*(pp) )*(g-1) + 1..( gauss + (G-1)*(pp) )*g] = Zg
-		Zil[pTT[i]*(g-1)+1..pTT[i]*g,( numinstrmax + (G-1) )*(g-1) + 1..( numinstrmax + (G-1))*g] = Zgl
 	}
 	Z = (Z \ Zi)
-	Zl = (Zl \ Zil)
 }
 
 printf("det(Z'*Z) = ")
@@ -659,6 +640,8 @@ det(1/numPais * ZuuZ)
 ZuuZ = invsym(1/numPais * ZuuZ)  */
 
 
+printf("done with... ZuuZ... \n")
+
      /*   printf(" u'*Z processing... ")                     */
      /*   uZ = u'*Z                                          */
      /*   printf(" invsym(cross(uZ,uZ)) processing... ")     */
@@ -708,11 +691,11 @@ nn = rows(matvar)
 epsilon = 0.001
 perturb = J(nn,1,epsilon)
 perturb = diag(perturb)
-/*   	matvar = matvar + perturb   */
+
 if(easymode == 1){
 			matvar = matvar + perturb
 		}else{
-			matvar = matvar 
+			matvar = matvar
 		}
 
 
@@ -721,6 +704,7 @@ nnu = rows(matvaru)
 epsilonu = 0.001
 perturbu = J(nnu,1,epsilonu)
 perturbu = diag(perturbu)
+/*    matvaru = matvaru + perturbu    */
 /*   matvaru = matvaru + perturbu     */
 if(easymode == 1){
 			matvaru = matvaru + perturbu 
@@ -737,46 +721,11 @@ st_matrix("uu", matvaru)
 printf("passing b to b2slsMata... \n")
 st_matrix("b2slsMata", b)
 
-
-	/* 	Weak Instrument Testing...	*/
-	/* First get gamma from X ~ Z	*/
-	/* gamma = (ZZ)^-1 Z'X	*/
-newYl = newYveclag1
-printf("ZtY processing... \n")
-ZtYl = Zl'*newYl
-printf("det(Zl'*Zl) = ")
-det(Zl'*Zl)
-printf("\n")
-czl = cross(Zl,Zl)
-printf("invsym(cross(Zl,Zl)) processing... \n")
-ZZl = invsym(czl)
-printf("gammal processing... \n")
-gammal = ZZl*ZtYl
-printf("etal processing... \n")
-etal = newYl - Zl*gammal
-	/* get sigma(gamma)  */
-nnl = cols(Zl)
-kkl = rows(Zl)
-printf("sigmal2 processing... \n")
-sigmal2 = (etal'*etal) / (nnl - kkl)
-printf("sigmalgammal processing... \n")
-sigmalgammal = sigmal2 * ZZl
-	/* then get F = (Rb -r) (R sigma R')^-1 (Rb - r) */
-Ijole = I(numinstrmax)
-R = J(G*numinstrmax,G*numinstrmax + G*(G-1),0)
-for(g=1;g<=G;g++){
-	R[(g-1)*numinstrmax + 1.. g*numinstrmax, (g-1)*(G-1+numinstrmax)+ 1..(g-1)*(G-1)+ g*numinstrmax] = Ijole
-}
-printf(" F processing... \n")
-RsigmaRt = invsym(R*sigmalgammal*R')
-F = (R*gammal)*RsigmaRt*(R*gammal)
-printf(" F  =  \n")
-F
-
 	/* Xvec[1..10,.]		*/
 	/* X[1..100,1..4] 		*/
 	/* newY[1..100,.] 		*/
 	/* Y[1..600,.] 			*/
+
 
 }
 
@@ -789,6 +738,13 @@ end
 ************************************************************************************
 ************************************************************************************
 ************************************************************************************
+
+
+
+
+
+
+
 
 capture program drop diag
 program define diag
